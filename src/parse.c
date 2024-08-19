@@ -35,6 +35,23 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *a
     return STATUS_SUCCESS;
 }
 
+int remove_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *name_to_remove) {
+    int i = 0;
+    for (; i < dbhdr->count; i++) {
+        if (strcmp(employees[i].name, name_to_remove)) {
+            continue;
+        }
+
+        memmove(employees + i, employees + i + 1, (--(dbhdr->count) - i) * sizeof(struct employee_t));
+        printf("Employee %s\n", employees[i].name);
+        printf("Employee \"%s\" has been removed. %d employees are currently stored in the DB\n", name_to_remove, dbhdr->count);
+        return STATUS_SUCCESS;
+    }
+
+    printf("Employee \"%s\" does not exist\n", name_to_remove);
+    return STATUS_ERROR;
+}
+
 int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employeesOut) {
     if (fd < 0) {
         printf("Got invalid FD\n");
@@ -68,11 +85,13 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
     }
     
     int realcount = dbhdr->count;
+    unsigned int current_filesize = dbhdr->filesize;
+    unsigned int new_filesize = sizeof(struct dbheader_t) + sizeof(struct employee_t) * realcount; 
 
     dbhdr->magic = htonl(dbhdr->magic);
-    dbhdr->filesize = htonl(sizeof(struct dbheader_t) + sizeof(struct employee_t) * realcount);
+    dbhdr->filesize = htonl(new_filesize);
     dbhdr->count = htons(dbhdr->count);
-    dbhdr->version = htons(dbhdr->version);
+    dbhdr->version = htons(dbhdr->version); 
 
     lseek(fd, 0, SEEK_SET);
     write(fd, dbhdr, sizeof(struct dbheader_t));
@@ -81,6 +100,11 @@ int output_file(int fd, struct dbheader_t *dbhdr, struct employee_t *employees) 
     for (; i < realcount; i++) {
         employees[i].hours = htonl(employees[i].hours);
         write(fd, &employees[i], sizeof(struct employee_t));
+    }
+
+    if (current_filesize > new_filesize && ftruncate(fd, new_filesize) != 0) {
+        perror("ftruncate");
+        return STATUS_ERROR;
     }
 
     return STATUS_SUCCESS;
@@ -100,6 +124,7 @@ int validate_db_header(int fd, struct dbheader_t **headerOut) {
 
     if (read(fd, header, sizeof(struct dbheader_t)) != sizeof(struct dbheader_t)) {
         perror("read");
+        printf("The size of the header in file does not match with expected size\n");
         free(header);
         return STATUS_ERROR;
     }
