@@ -21,13 +21,15 @@ int main(int argc, char *argv[]) {
     bool newfile = false;
     bool list = false; 
     char *name_to_remove = NULL;
+    char *update = NULL; 
+    char *hours = NULL;
     int c;
 
     int dbfd = -1;
     struct dbheader_t *header = NULL;
     struct employee_t *employees = NULL;
 
-    while ((c = getopt(argc, argv, "nf:a:lr:")) != -1) {
+    while ((c = getopt(argc, argv, "nf:a:lr:u:h:")) != -1) {
         switch (c) {
             case 'n':
                 newfile = true;
@@ -43,6 +45,12 @@ int main(int argc, char *argv[]) {
                 break;
             case 'r':
                 name_to_remove = optarg;
+                break;
+            case 'u':
+                update = optarg;
+                break;
+            case 'h':
+                hours = optarg;
                 break;
             case '?':
                 printf("Unkown option -%c\n", c);
@@ -100,6 +108,15 @@ int main(int argc, char *argv[]) {
 
     if (name_to_remove) {
         remove_employee(header, employees, name_to_remove);
+    }
+
+    if (update) {
+        if (hours == NULL) {
+            printf("-h option is required when -u option is provided");
+            return -1;
+        }
+
+        update_employee_hours(header, employees, update, atoi(hours)); 
     }
 
     if (list) {

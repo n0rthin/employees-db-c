@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -78,6 +79,25 @@ int read_employees(int fd, struct dbheader_t *dbhdr, struct employee_t **employe
     }
 
     *employeesOut = employees;
+
+    return STATUS_SUCCESS;
+}
+
+int update_employee_hours(struct dbheader_t *dbhdr, struct employee_t *employees, char *name, unsigned int hours) {
+    int i = 0;
+    bool updated = false;
+    for (; i < dbhdr->count; i++) {
+        if (strcmp(employees[i].name, name)) {
+            continue;
+        }
+
+        employees[i].hours = hours;
+        printf("Employee \"%s\" has been updated.\n", name);
+    }
+    
+    if (!updated) {
+        printf("Employee \"%s\" does not exist.\n", name);
+    }
 
     return STATUS_SUCCESS;
 }
