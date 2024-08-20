@@ -37,14 +37,18 @@ int add_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *a
 
 int remove_employee(struct dbheader_t *dbhdr, struct employee_t *employees, char *name_to_remove) {
     int i = 0;
+    int count_before_remove = dbhdr->count;
     for (; i < dbhdr->count; i++) {
         if (strcmp(employees[i].name, name_to_remove)) {
             continue;
         }
 
         memmove(employees + i, employees + i + 1, (--(dbhdr->count) - i) * sizeof(struct employee_t));
-        printf("Employee %s\n", employees[i].name);
+        i--;
         printf("Employee \"%s\" has been removed. %d employees are currently stored in the DB\n", name_to_remove, dbhdr->count);
+    }
+
+    if (count_before_remove != dbhdr->count) {
         return STATUS_SUCCESS;
     }
 
